@@ -1,6 +1,3 @@
 @HCMS.AppointmentService_HostAddress = http://localhost:5043
 
-GET {{HCMS.AppointmentService_HostAddress}}/weatherforecast/
-Accept: application/json
-
 ###
