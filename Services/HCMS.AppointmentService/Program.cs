@@ -1,4 +1,4 @@
-using HCMS.AppointmentService.Core;
+using HCMS.AppointmentService.Infrastructure.Core;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);

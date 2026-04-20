@@ -1,7 +1,7 @@
 ﻿using HCMS.AppointmentService.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
-namespace HCMS.AppointmentService.Core
+namespace HCMS.AppointmentService.Infrastructure.Core
 {
     public class ServiceDbContext(DbContextOptions<ServiceDbContext> options) : DbContext(options)
     {
