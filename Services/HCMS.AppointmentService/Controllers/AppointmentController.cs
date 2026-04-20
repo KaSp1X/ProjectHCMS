@@ -1,72 +1,67 @@
-﻿using DoctorServiceGrpc;
+﻿using HCMS.AppointmentService.Domain.Commands;
 using HCMS.AppointmentService.Domain.DTOs;
-using HCMS.AppointmentService.Domain.Entities;
-using HCMS.AppointmentService.Domain.Enums;
-using HCMS.AppointmentService.Infrastructure.Core;
+using HCMS.AppointmentService.Domain.Handlers;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace HCMS.AppointmentService.Controllers
 {
     [ApiController]
     [Route("api/appointments")]
-    public class AppointmentController(ServiceDbContext context, DoctorAvailability.DoctorAvailabilityClient grpcClient) : ControllerBase
+    public class AppointmentController : ControllerBase
     {
-        private readonly ServiceDbContext _context = context;
-        private readonly DoctorAvailability.DoctorAvailabilityClient _grpcClient = grpcClient;
-
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> Create([FromBody] CreateAppointmentDto dto)
+        public async Task<IActionResult> Create([FromBody] CreateAppointmentDto dto, [FromServices] CreateAppointmentHandler handler)
         {
-            if (dto.StartTime >= dto.EndTime)
-                return BadRequest("Invalid time range");
+            try
+            {
+                var command = new CreateAppointmentCommand(
+                    dto.PatientId,
+                    dto.DoctorId,
+                    dto.StartTime,
+                    dto.EndTime);
 
-            // RESTfull way to check if doc is available
-            //
-            //var exists = await _context.Appointments.AnyAsync(a =>
-            //    a.DoctorId == dto.DoctorId &&
-            //    a.Status == AppointmentStatus.Scheduled &&
-            //    dto.StartTime < a.EndTime &&
-            //    dto.EndTime > a.StartTime);
-            //
-            //if (exists)
-            //    return BadRequest("Doctor already has an appointment in this time slot");
+                var result = await handler.Handle(command);
 
-            var grpcResponse = await _grpcClient.CheckAvailabilityAsync(
-                new AvailabilityRequest
-                {
-                    DoctorId = dto.DoctorId.ToString(),
-                    StartTime = dto.StartTime.ToString("O"),
-                    EndTime = dto.EndTime.ToString("O")
-                });
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
 
-            if (!grpcResponse.IsAvailable)
-                return BadRequest("Doctor not available (gRPC)");
-
-            var appointment = new Appointment(
-                Guid.NewGuid(),
-                dto.PatientId,
-                dto.DoctorId,
-                dto.StartTime,
-                dto.EndTime,
-                AppointmentStatus.Scheduled,
-                DateTime.UtcNow
-            );
-
-            _context.Appointments.Add(appointment);
-            await _context.SaveChangesAsync();
-
-            return Ok(appointment);
+        [HttpGet("doctor/{doctorId}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetByDoctor(Guid doctorId, [FromServices] GetAppointmentsByDoctorHandler handler)
+        {
+            var appointments = await handler.Handle(doctorId);
+            return Ok(appointments);
         }
 
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetAll()
+        public async Task<IActionResult> GetAll([FromServices] GetAllAppointmentsHandler handler)
         {
-            var appointments = await _context.Appointments.AsNoTracking().ToListAsync();
+            var appointments = await handler.Handle();
             return Ok(appointments);
+        }
+
+        [HttpPut("{id}/cancel")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> Cancel(Guid id, [FromServices] CancelAppointmentHandler handler)
+        {
+            try
+            {
+                await handler.Handle(id);
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
     }
 }

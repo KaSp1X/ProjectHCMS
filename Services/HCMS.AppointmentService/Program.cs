@@ -1,4 +1,5 @@
 using DoctorServiceGrpc;
+using HCMS.AppointmentService.Domain.Handlers;
 using HCMS.AppointmentService.Infrastructure.Core;
 using Microsoft.EntityFrameworkCore;
 
@@ -16,6 +17,11 @@ builder.Services.AddGrpcClient<DoctorAvailability.DoctorAvailabilityClient>(o =>
 {
     o.Address = new Uri("https://localhost:5001");
 });
+
+builder.Services.AddScoped<CreateAppointmentHandler>();
+builder.Services.AddScoped<GetAppointmentsByDoctorHandler>();
+builder.Services.AddScoped<GetAllAppointmentsHandler>();
+builder.Services.AddScoped<CancelAppointmentHandler>();
 
 var app = builder.Build();
 

@@ -2,12 +2,14 @@
 
 namespace HCMS.AppointmentService.Domain.Entities
 {
-    public record Appointment(
-        Guid Id,
-        Guid PatientId,
-        Guid DoctorId,
-        DateTime StartTime,
-        DateTime EndTime,
-        AppointmentStatus Status,
-        DateTime CreatedAt);
+    public class Appointment
+    {
+        public Guid Id { get; set; }
+        public Guid PatientId { get; set; }
+        public Guid DoctorId { get; set; }
+        public DateTime StartTime { get; set; }
+        public DateTime EndTime { get; set; }
+        public AppointmentStatus Status { get; set; }
+        public DateTime CreatedAt { get; set; }
+    }
 }
