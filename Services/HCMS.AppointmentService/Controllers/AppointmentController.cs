@@ -1,4 +1,5 @@
-﻿using HCMS.AppointmentService.Domain.DTOs;
+﻿using DoctorServiceGrpc;
+using HCMS.AppointmentService.Domain.DTOs;
 using HCMS.AppointmentService.Domain.Entities;
 using HCMS.AppointmentService.Domain.Enums;
 using HCMS.AppointmentService.Infrastructure.Core;
@@ -9,9 +10,10 @@ namespace HCMS.AppointmentService.Controllers
 {
     [ApiController]
     [Route("api/appointments")]
-    public class AppointmentController(ServiceDbContext context) : ControllerBase
+    public class AppointmentController(ServiceDbContext context, DoctorAvailability.DoctorAvailabilityClient grpcClient) : ControllerBase
     {
         private readonly ServiceDbContext _context = context;
+        private readonly DoctorAvailability.DoctorAvailabilityClient _grpcClient = grpcClient;
 
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -21,14 +23,27 @@ namespace HCMS.AppointmentService.Controllers
             if (dto.StartTime >= dto.EndTime)
                 return BadRequest("Invalid time range");
 
-            var exists = await _context.Appointments.AnyAsync(a =>
-                a.DoctorId == dto.DoctorId &&
-                a.Status == AppointmentStatus.Scheduled &&
-                dto.StartTime < a.EndTime &&
-                dto.EndTime > a.StartTime);
+            // RESTfull way to check if doc is available
+            //
+            //var exists = await _context.Appointments.AnyAsync(a =>
+            //    a.DoctorId == dto.DoctorId &&
+            //    a.Status == AppointmentStatus.Scheduled &&
+            //    dto.StartTime < a.EndTime &&
+            //    dto.EndTime > a.StartTime);
+            //
+            //if (exists)
+            //    return BadRequest("Doctor already has an appointment in this time slot");
 
-            if (exists)
-                return BadRequest("Doctor already has an appointment in this time slot");
+            var grpcResponse = await _grpcClient.CheckAvailabilityAsync(
+                new AvailabilityRequest
+                {
+                    DoctorId = dto.DoctorId.ToString(),
+                    StartTime = dto.StartTime.ToString("O"),
+                    EndTime = dto.EndTime.ToString("O")
+                });
+
+            if (!grpcResponse.IsAvailable)
+                return BadRequest("Doctor not available (gRPC)");
 
             var appointment = new Appointment(
                 Guid.NewGuid(),

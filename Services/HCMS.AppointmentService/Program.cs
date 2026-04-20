@@ -1,3 +1,4 @@
+using DoctorServiceGrpc;
 using HCMS.AppointmentService.Infrastructure.Core;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,6 +11,11 @@ builder.Services.AddOpenApi();
 builder.Services.AddControllers();
 
 builder.Services.AddDbContext<ServiceDbContext>(options => options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+builder.Services.AddGrpcClient<DoctorAvailability.DoctorAvailabilityClient>(o =>
+{
+    o.Address = new Uri("https://localhost:5001");
+});
 
 var app = builder.Build();
 
