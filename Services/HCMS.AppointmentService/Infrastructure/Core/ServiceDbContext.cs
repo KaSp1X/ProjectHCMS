@@ -6,6 +6,7 @@ namespace HCMS.AppointmentService.Infrastructure.Core
     public class ServiceDbContext(DbContextOptions<ServiceDbContext> options) : DbContext(options)
     {
         public DbSet<Appointment> Appointments { get; set; }
+        public DbSet<OutboxMessage> OutboxMessages { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

@@ -2,6 +2,7 @@ using DoctorServiceGrpc;
 using HCMS.AppointmentService.Domain.Handlers;
 using HCMS.AppointmentService.Infrastructure.Core;
 using HCMS.AppointmentService.Infrastructure.Kafka;
+using HCMS.AppointmentService.Workers;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -18,6 +19,8 @@ builder.Services.AddGrpcClient<DoctorAvailability.DoctorAvailabilityClient>(o =>
 {
     o.Address = new Uri("https://localhost:5001");
 });
+
+builder.Services.AddHostedService<OutboxWorker>();
 
 builder.Services.AddSingleton<KafkaProducer>();
 

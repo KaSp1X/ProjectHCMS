@@ -6,6 +6,7 @@ using HCMS.AppointmentService.Infrastructure.Core;
 using HCMS.AppointmentService.Infrastructure.Kafka;
 using HCMS.AppointmentService.Infrastructure.Kafka.Events;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 
 namespace HCMS.AppointmentService.Domain.Handlers
 {
@@ -65,7 +66,17 @@ namespace HCMS.AppointmentService.Domain.Handlers
                 appointment.StartTime,
                 appointment.EndTime);
 
-            await _producer.ProduceAsync("appointment-created", eventMessage);
+            var outboxMessage = new OutboxMessage
+            {
+                Id = Guid.NewGuid(),
+                Type = "AppointmentCreated",
+                Payload = JsonSerializer.Serialize(eventMessage),
+                OccurredOn = DateTime.UtcNow,
+                Processed = false
+            };
+
+            _context.OutboxMessages.Add(outboxMessage);
+            await _context.SaveChangesAsync();
 
             return appointment;
         }
