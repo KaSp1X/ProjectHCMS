@@ -17,14 +17,12 @@ namespace HCMS.AppointmentService.Infrastructure.Kafka
             _producer = new ProducerBuilder<string, string>(producerConfig).Build();
         }
 
-        public async Task ProduceAsync(string topic, object message)
+        public async Task ProduceAsync(string topic, string message)
         {
-            var json = JsonSerializer.Serialize(message);
-
             await _producer.ProduceAsync(topic, new Message<string, string>
             {
                 Key = Guid.NewGuid().ToString(),
-                Value = json
+                Value = message
             });
         }
     }

@@ -28,12 +28,11 @@ namespace HCMS.NotificationService.Consumers
 
                 using var scope = _provider.CreateScope();
                 var handler = scope.ServiceProvider.GetRequiredService<NotificationHandler>();
-                var message = JsonSerializer.Deserialize<string>(result.Message.Value);
-                var appointmentCreatedEvent = JsonSerializer.Deserialize<AppointmentCreatedEvent>(message);
+                var message = JsonSerializer.Deserialize<AppointmentCreatedEvent>(result.Message.Value);
 
                 try
                 {
-                    await handler.Handle(appointmentCreatedEvent);
+                    await handler.Handle(message);
                     consumer.Commit(result);
                 }
                 catch (Exception ex)
