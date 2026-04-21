@@ -3,16 +3,20 @@ using HCMS.AppointmentService.Domain.Commands;
 using HCMS.AppointmentService.Domain.Entities;
 using HCMS.AppointmentService.Domain.Enums;
 using HCMS.AppointmentService.Infrastructure.Core;
+using HCMS.AppointmentService.Infrastructure.Kafka;
+using HCMS.AppointmentService.Infrastructure.Kafka.Events;
 using Microsoft.EntityFrameworkCore;
 
 namespace HCMS.AppointmentService.Domain.Handlers
 {
     public class CreateAppointmentHandler(
         ServiceDbContext context,
-        DoctorAvailability.DoctorAvailabilityClient grpcClient)
+        DoctorAvailability.DoctorAvailabilityClient grpcClient,
+        KafkaProducer producer)
     {
         private readonly ServiceDbContext _context = context;
         private readonly DoctorAvailability.DoctorAvailabilityClient _grpcClient = grpcClient;
+        private readonly KafkaProducer _producer = producer;
 
         public async Task<Appointment> Handle(CreateAppointmentCommand command)
         {
@@ -52,6 +56,15 @@ namespace HCMS.AppointmentService.Domain.Handlers
 
             _context.Appointments.Add(appointment);
             await _context.SaveChangesAsync();
+
+            var eventMessage = new AppointmentCreatedEvent(
+                appointment.Id,
+                appointment.PatientId,
+                appointment.DoctorId,
+                appointment.StartTime,
+                appointment.EndTime);
+
+            await _producer.ProduceAsync("appointment-created", eventMessage);
 
             return appointment;
         }
