@@ -22,17 +22,18 @@ namespace HCMS.AppointmentService.Domain.Handlers
         {
             if (command.StartTime >= command.EndTime)
                 throw new Exception("Invalid time range");
+            // TODO: UNCOMMENT AFTER GRPC CLIENT HAS WHOM TO CALL
+            //
+            //var grpcResponse = await _grpcClient.CheckAvailabilityAsync(
+            //    new AvailabilityRequest
+            //    {
+            //        DoctorId = command.DoctorId.ToString(),
+            //        StartTime = command.StartTime.ToString("O"),
+            //        EndTime = command.EndTime.ToString("O")
+            //    });
 
-            var grpcResponse = await _grpcClient.CheckAvailabilityAsync(
-                new AvailabilityRequest
-                {
-                    DoctorId = command.DoctorId.ToString(),
-                    StartTime = command.StartTime.ToString("O"),
-                    EndTime = command.EndTime.ToString("O")
-                });
-
-            if (!grpcResponse.IsAvailable)
-                throw new Exception("Doctor not available");
+            //if (!grpcResponse.IsAvailable)
+            //    throw new Exception("Doctor not available");
 
             var exists = await _context.Appointments.AnyAsync(a =>
                 a.DoctorId == command.DoctorId &&
