@@ -1,0 +1,34 @@
+using HCMS.DoctorService.Domain.Handlers;
+using HCMS.DoctorService.Infrastructure.Core;
+using HCMS.DoctorService.Infrastructure.gRPC;
+using Microsoft.EntityFrameworkCore;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// Add services to the container.
+// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+builder.Services.AddOpenApi();
+
+builder.Services.AddControllers();
+
+builder.Services.AddDbContext<ServiceDbContext>(options => options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+builder.Services.AddGrpc();
+
+builder.Services.AddScoped<CreateSlotHandler>();
+
+var app = builder.Build();
+
+// Configure the HTTP request pipeline.
+if (app.Environment.IsDevelopment())
+{
+    app.MapOpenApi();
+}
+
+app.UseHttpsRedirection();
+
+app.MapControllers();
+
+app.MapGrpcService<DoctorGrpcService>();
+
+app.Run();
