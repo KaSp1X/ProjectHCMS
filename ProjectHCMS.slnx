@@ -2,4 +2,5 @@
   <Project Path="Services/HCMS.AppointmentService/HCMS.AppointmentService.csproj" />
   <Project Path="Services/HCMS.IdentityService/HCMS.IdentityService.csproj" />
   <Project Path="Services/HCMS.NotificationService/HCMS.NotificationService.csproj" />
+  <Project Path="Services/HCMS.PatientService/HCMS.PatientService.csproj" />
 </Solution>
