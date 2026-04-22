@@ -17,7 +17,7 @@ builder.Services.AddDbContext<ServiceDbContext>(options => options.UseNpgsql(bui
 
 builder.Services.AddGrpcClient<DoctorAvailability.DoctorAvailabilityClient>(o =>
 {
-    o.Address = new Uri("https://localhost:5001");
+    o.Address = new Uri("https://localhost:7205");
 });
 
 builder.Services.AddHostedService<OutboxWorker>();

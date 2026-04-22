@@ -12,29 +12,26 @@ namespace HCMS.AppointmentService.Domain.Handlers
 {
     public class CreateAppointmentHandler(
         ServiceDbContext context,
-        DoctorAvailability.DoctorAvailabilityClient grpcClient,
-        KafkaProducer producer)
+        DoctorAvailability.DoctorAvailabilityClient grpcClient)
     {
         private readonly ServiceDbContext _context = context;
         private readonly DoctorAvailability.DoctorAvailabilityClient _grpcClient = grpcClient;
-        private readonly KafkaProducer _producer = producer;
 
         public async Task<Appointment> Handle(CreateAppointmentCommand command)
         {
             if (command.StartTime >= command.EndTime)
                 throw new Exception("Invalid time range");
-            // TODO: UNCOMMENT AFTER GRPC CLIENT HAS WHOM TO CALL
-            //
-            //var grpcResponse = await _grpcClient.CheckAvailabilityAsync(
-            //    new AvailabilityRequest
-            //    {
-            //        DoctorId = command.DoctorId.ToString(),
-            //        StartTime = command.StartTime.ToString("O"),
-            //        EndTime = command.EndTime.ToString("O")
-            //    });
 
-            //if (!grpcResponse.IsAvailable)
-            //    throw new Exception("Doctor not available");
+            var grpcResponse = await _grpcClient.CheckAvailabilityAsync(
+                new AvailabilityRequest
+                {
+                    DoctorId = command.DoctorId.ToString(),
+                    StartTime = command.StartTime.ToString("O"),
+                    EndTime = command.EndTime.ToString("O")
+                });
+
+            if (!grpcResponse.IsAvailable)
+                throw new Exception("Doctor not available");
 
             var exists = await _context.Appointments.AnyAsync(a =>
                 a.DoctorId == command.DoctorId &&

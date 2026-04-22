@@ -2,6 +2,7 @@
 using Grpc.Core;
 using HCMS.DoctorService.Infrastructure.Core;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
 
 namespace HCMS.DoctorService.Infrastructure.gRPC
 {
@@ -14,8 +15,8 @@ namespace HCMS.DoctorService.Infrastructure.gRPC
             ServerCallContext context)
         {
             var doctorId = Guid.Parse(request.DoctorId);
-            var start = DateTime.Parse(request.StartTime);
-            var end = DateTime.Parse(request.EndTime);
+            var start = DateTime.Parse(request.StartTime, CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal);
+            var end = DateTime.Parse(request.EndTime, CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal);
 
             var hasSlot = await _context.AvailabilitySlots.AnyAsync(s =>
                 s.DoctorId == doctorId &&
