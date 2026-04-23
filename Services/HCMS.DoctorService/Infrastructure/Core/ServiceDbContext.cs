@@ -7,6 +7,7 @@ namespace HCMS.DoctorService.Infrastructure.Core
     {
         public DbSet<Doctor> Doctors { get; set; }
         public DbSet<AvailabilitySlot> AvailabilitySlots { get; set; }
+        public DbSet<BookedAppointment> BookedAppointments { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

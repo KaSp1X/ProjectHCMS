@@ -1,6 +1,7 @@
 using HCMS.DoctorService.Domain.Handlers;
 using HCMS.DoctorService.Infrastructure.Core;
 using HCMS.DoctorService.Infrastructure.gRPC;
+using HCMS.DoctorService.Infrastructure.Kafka.Consumers;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -14,6 +15,8 @@ builder.Services.AddControllers();
 builder.Services.AddDbContext<ServiceDbContext>(options => options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddGrpc();
+
+builder.Services.AddHostedService<KafkaConsumer>();
 
 builder.Services.AddScoped<CreateSlotHandler>();
 

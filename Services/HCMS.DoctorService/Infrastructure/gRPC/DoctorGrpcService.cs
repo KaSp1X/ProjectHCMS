@@ -26,6 +26,14 @@ namespace HCMS.DoctorService.Infrastructure.gRPC
             if (!hasSlot)
                 return new AvailabilityResponse { IsAvailable = false };
 
+            var hasOverlap = await _context.BookedAppointments.AnyAsync(a =>
+                a.DoctorId == doctorId &&
+                start < a.EndTime &&
+                end > a.StartTime);
+
+            if (hasOverlap)
+                return new AvailabilityResponse { IsAvailable = false };
+
             return new AvailabilityResponse { IsAvailable = true };
         }
     }
