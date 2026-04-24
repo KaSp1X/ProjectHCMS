@@ -2,7 +2,10 @@
 using HCMS.MedicalRecordsService.Domain.Entities;
 using HCMS.MedicalRecordsService.Infrastructure.Core;
 using Microsoft.AspNetCore.Mvc;
+using MongoDB.Bson;
 using MongoDB.Driver;
+using MongoDB.Driver.GridFS;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace HCMS.MedicalRecordsService.Controllers
 {
@@ -26,20 +29,34 @@ namespace HCMS.MedicalRecordsService.Controllers
             };
 
             await _context.Records.InsertOneAsync(record);
-            return Ok(record);    
+            return Ok(record);
         }
 
         [HttpPost("{recordId}/files")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> UploadFile(string recordId, IFormFile file)
         {
-            var bucket = _context.FileBucket;
+            var objectId = ObjectId.Parse(recordId);
+
+            var record = await _context.Records.FindAsync(r => r.Id == objectId);
+
+            if (record == null)
+                return NotFound();
 
             using var stream = file.OpenReadStream();
+            
+            var bucket = _context.FileBucket;
 
             var fileId = await bucket.UploadFromStreamAsync(
                 file.FileName,
-                stream);
+                stream,
+                new GridFSUploadOptions
+                {
+                    Metadata = new BsonDocument
+                    {
+                        { "contentType", file.ContentType }
+                    }
+                });
 
             var update = Builders<MedicalRecord>.Update.Push(r => r.Files,
                 new FileReference
@@ -50,7 +67,7 @@ namespace HCMS.MedicalRecordsService.Controllers
                 });
 
             await _context.Records.UpdateOneAsync(
-                r => r.Id == MongoDB.Bson.ObjectId.Parse(recordId),
+                r => r.Id == objectId,
                 update);
             return Ok(fileId);
         }
@@ -60,13 +77,17 @@ namespace HCMS.MedicalRecordsService.Controllers
         {
             var bucket = _context.FileBucket;
 
-            var stream = new MemoryStream();
+            var objectId = ObjectId.Parse(fileId);
+            var filter = Builders<GridFSFileInfo>.Filter.Eq("_id", objectId);
+            var fileInfo = await bucket.Find(filter).FirstOrDefaultAsync();
 
-            await bucket.DownloadToStreamAsync(MongoDB.Bson.ObjectId.Parse(fileId), stream);
+            if (fileInfo == null) 
+                return NotFound();
 
-            stream.Position = 0;
+            var stream = await bucket.OpenDownloadStreamAsync(objectId);
+            var contentType = fileInfo.Metadata?["contentType"]?.AsString ?? "application/octet-stream";
 
-            return File(stream, "application/octet-stream");
+            return File(stream, contentType, fileInfo.Filename, enableRangeProcessing: true);
         }
     }
 }
