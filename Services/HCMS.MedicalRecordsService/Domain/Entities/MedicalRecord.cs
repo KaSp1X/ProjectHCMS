@@ -7,8 +7,11 @@ namespace HCMS.MedicalRecordsService.Domain.Entities
     {
         [BsonId]
         public ObjectId Id { get; set; }
+        [BsonGuidRepresentation(GuidRepresentation.Standard)]
         public Guid PatientId { get; set; }
+        [BsonGuidRepresentation(GuidRepresentation.Standard)]
         public Guid DoctorId { get; set; }
+        [BsonGuidRepresentation(GuidRepresentation.Standard)]
         public Guid AppointmentId { get; set; }
         public string Notes { get; set; }
         public List<FileReference> Files { get; set; } = [];

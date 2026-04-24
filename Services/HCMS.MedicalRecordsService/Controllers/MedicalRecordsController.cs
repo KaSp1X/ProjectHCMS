@@ -60,7 +60,7 @@ namespace HCMS.MedicalRecordsService.Controllers
         {
             var bucket = _context.FileBucket;
 
-            using var stream = new MemoryStream();
+            var stream = new MemoryStream();
 
             await bucket.DownloadToStreamAsync(MongoDB.Bson.ObjectId.Parse(fileId), stream);
 
