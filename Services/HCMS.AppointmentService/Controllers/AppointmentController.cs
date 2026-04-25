@@ -1,6 +1,8 @@
 ﻿using HCMS.AppointmentService.Domain.Commands;
 using HCMS.AppointmentService.Domain.DTOs;
 using HCMS.AppointmentService.Domain.Handlers;
+using HCMS.AppointmentService.Domain.Queries;
+using HCMS.AppointmentService.Infrastructure.Auth;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HCMS.AppointmentService.Controllers
@@ -12,17 +14,20 @@ namespace HCMS.AppointmentService.Controllers
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> Create([FromBody] CreateAppointmentDto dto, [FromServices] CreateAppointmentHandler handler)
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        public async Task<IActionResult> Create([FromBody] CreateAppointmentDto dto, [FromServices] CreateAppointmentHandler handler, [FromServices] AppointmentAccessService access)
         {
+            var user = new UserContext(User);
+
+            var command = new CreateAppointmentCommand(
+                user.UserId,
+                dto.DoctorId,
+                dto.StartTime,
+                dto.EndTime);
+
             try
             {
-                var command = new CreateAppointmentCommand(
-                    dto.PatientId,
-                    dto.DoctorId,
-                    dto.StartTime,
-                    dto.EndTime);
-
-                var result = await handler.Handle(command);
+                var result = await handler.Handle(command, user);
 
                 return Ok(result);
             }
@@ -32,30 +37,25 @@ namespace HCMS.AppointmentService.Controllers
             }
         }
 
-        [HttpGet("doctor/{doctorId}")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetByDoctor(Guid doctorId, [FromServices] GetAppointmentsByDoctorHandler handler)
-        {
-            var appointments = await handler.Handle(doctorId);
-            return Ok(appointments);
-        }
-
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetAll([FromServices] GetAllAppointmentsHandler handler)
+        public async Task<IActionResult> GetAll([FromQuery] Guid? patientId, [FromQuery] Guid? doctorId, [FromServices] GetAppointmentsHandler handler)
         {
-            var appointments = await handler.Handle();
+            var appointments = await handler.Handle(new GetAppointmentsQuery(patientId, doctorId));
             return Ok(appointments);
         }
 
-        [HttpPut("{id}/cancel")]
+        [HttpPut("{appointmentId}/cancel")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> Cancel(Guid id, [FromServices] CancelAppointmentHandler handler)
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        public async Task<IActionResult> Cancel(Guid appointmentId, [FromServices] CancelAppointmentHandler handler)
         {
+            var user = new UserContext(User);
+
             try
             {
-                await handler.Handle(id);
+                await handler.Handle(appointmentId, user);
                 return Ok();
             }
             catch (Exception ex)

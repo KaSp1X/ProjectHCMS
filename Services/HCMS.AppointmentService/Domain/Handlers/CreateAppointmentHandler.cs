@@ -2,6 +2,7 @@
 using HCMS.AppointmentService.Domain.Commands;
 using HCMS.AppointmentService.Domain.Entities;
 using HCMS.AppointmentService.Domain.Enums;
+using HCMS.AppointmentService.Infrastructure.Auth;
 using HCMS.AppointmentService.Infrastructure.Core;
 using HCMS.AppointmentService.Infrastructure.Kafka;
 using HCMS.AppointmentService.Infrastructure.Kafka.Events;
@@ -12,13 +13,21 @@ namespace HCMS.AppointmentService.Domain.Handlers
 {
     public class CreateAppointmentHandler(
         ServiceDbContext context,
-        DoctorAvailability.DoctorAvailabilityClient grpcClient)
+        DoctorAvailability.DoctorAvailabilityClient grpcClient,
+        AppointmentAccessService access)
     {
         private readonly ServiceDbContext _context = context;
         private readonly DoctorAvailability.DoctorAvailabilityClient _grpcClient = grpcClient;
+        private readonly AppointmentAccessService _access = access;
 
-        public async Task<Appointment> Handle(CreateAppointmentCommand command)
+        public async Task<Appointment> Handle(CreateAppointmentCommand command, UserContext user)
         {
+            if (!_access.CanCreate(user))
+                throw new Exception("Forbidden");
+
+            if (command.PatientId != user.UserId)
+                throw new Exception("Cannot create for another user");
+
             if (command.StartTime >= command.EndTime)
                 throw new Exception("Invalid time range");
 
