@@ -7,6 +7,8 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.WebHost.UseUrls("http://localhost:5001");
+
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
@@ -17,7 +19,7 @@ builder.Services.AddDbContext<ServiceDbContext>(options => options.UseNpgsql(bui
 
 builder.Services.AddGrpcClient<DoctorAvailability.DoctorAvailabilityClient>(o =>
 {
-    o.Address = new Uri("https://localhost:7205");
+    o.Address = new Uri("http://localhost:5002");
 });
 
 builder.Services.AddHostedService<OutboxWorker>();
@@ -36,8 +38,6 @@ if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
-
-app.UseHttpsRedirection();
 
 app.MapControllers();
 

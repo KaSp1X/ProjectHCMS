@@ -1,4 +1,5 @@
 <Solution>
+  <Project Path="HCMS.ApiGateway/HCMS.ApiGateway.csproj" />
   <Project Path="Services/HCMS.AppointmentService/HCMS.AppointmentService.csproj" />
   <Project Path="Services/HCMS.DoctorService/HCMS.DoctorService.csproj" />
   <Project Path="Services/HCMS.IdentityService/HCMS.IdentityService.csproj" />

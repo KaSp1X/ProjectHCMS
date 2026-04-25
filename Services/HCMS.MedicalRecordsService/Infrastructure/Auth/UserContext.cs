@@ -12,7 +12,7 @@ namespace HCMS.MedicalRecordsService.Infrastructure.Auth
             var sub = user.FindFirst("sub")?.Value ?? user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
             UserId = Guid.Parse(sub);
-            Role = user.FindFirst("role")?.Value;
+            Role = user.FindFirst("role")?.Value ?? user.FindFirst(ClaimTypes.Role)?.Value;
         }
 
         public bool IsPatient => Role == "Patient";
