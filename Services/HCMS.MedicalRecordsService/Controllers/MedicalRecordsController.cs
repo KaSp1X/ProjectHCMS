@@ -1,11 +1,11 @@
 ﻿using HCMS.MedicalRecordsService.Domain.DTOs;
 using HCMS.MedicalRecordsService.Domain.Entities;
+using HCMS.MedicalRecordsService.Infrastructure.Auth;
 using HCMS.MedicalRecordsService.Infrastructure.Core;
 using Microsoft.AspNetCore.Mvc;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using MongoDB.Driver.GridFS;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace HCMS.MedicalRecordsService.Controllers
 {
@@ -17,8 +17,14 @@ namespace HCMS.MedicalRecordsService.Controllers
 
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public async Task<IActionResult> CreateRecord(CreateRecordDto dto)
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        public async Task<IActionResult> CreateRecord(CreateRecordDto dto, [FromServices] RecordAccessService accessService)
         {
+            var user = new UserContext(User);
+
+            if (!user.IsDoctor)
+                return Forbid();
+
             var record = new MedicalRecord
             {
                 PatientId = dto.PatientId,
@@ -32,19 +38,48 @@ namespace HCMS.MedicalRecordsService.Controllers
             return Ok(record);
         }
 
-        [HttpPost("{recordId}/files")]
+        [HttpGet("{id}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public async Task<IActionResult> UploadFile(string recordId, IFormFile file)
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> Get(string id, [FromServices] RecordAccessService accessService)
         {
-            var objectId = ObjectId.Parse(recordId);
-
-            var record = await _context.Records.FindAsync(r => r.Id == objectId);
+            var record = await _context.Records
+                .Find(r => r.Id == ObjectId.Parse(id))
+                .FirstOrDefaultAsync();
 
             if (record == null)
                 return NotFound();
 
+            var user = new UserContext(User);
+
+            if (!accessService.CanAccess(user, record))
+                return Forbid();
+
+            return Ok(record);
+        }
+
+        [HttpPost("{recordId}/files")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> UploadFile(string recordId, IFormFile file, [FromServices] RecordAccessService accessService)
+        {
+            var objectId = ObjectId.Parse(recordId);
+
+            var record = await _context.Records.Find(r => r.Id == ObjectId.Parse(recordId))
+                                               .FirstOrDefaultAsync();
+
+            if (record == null)
+                return NotFound();
+
+            var user = new UserContext(User);
+
+            if (!accessService.CanAccess(user, record))
+                return Forbid();
+
             using var stream = file.OpenReadStream();
-            
+
             var bucket = _context.FileBucket;
 
             var fileId = await bucket.UploadFromStreamAsync(
@@ -73,7 +108,12 @@ namespace HCMS.MedicalRecordsService.Controllers
         }
 
         [HttpGet("files/{fileId}")]
-        public async Task<IActionResult> DownloadFile(string fileId)
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status206PartialContent)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status416RequestedRangeNotSatisfiable)]
+        public async Task<IActionResult> DownloadFile(string fileId, [FromServices] RecordAccessService accessService)
         {
             var bucket = _context.FileBucket;
 
@@ -81,8 +121,18 @@ namespace HCMS.MedicalRecordsService.Controllers
             var filter = Builders<GridFSFileInfo>.Filter.Eq("_id", objectId);
             var fileInfo = await bucket.Find(filter).FirstOrDefaultAsync();
 
-            if (fileInfo == null) 
+            if (fileInfo == null)
                 return NotFound();
+
+            var record = await _context.Records.Find(r => r.Files.Any(f => f.Id == objectId)).FirstOrDefaultAsync();
+
+            if (record == null)
+                return NotFound();
+
+            var user = new UserContext(User);
+
+            if (!accessService.CanAccess(user, record))
+                return Forbid();
 
             var stream = await bucket.OpenDownloadStreamAsync(objectId);
             var contentType = fileInfo.Metadata?["contentType"]?.AsString ?? "application/octet-stream";
