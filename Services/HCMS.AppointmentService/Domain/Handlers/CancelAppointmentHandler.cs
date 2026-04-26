@@ -1,6 +1,9 @@
-﻿using HCMS.AppointmentService.Domain.Enums;
+﻿using HCMS.AppointmentService.Domain.Entities;
+using HCMS.AppointmentService.Domain.Enums;
 using HCMS.AppointmentService.Infrastructure.Auth;
 using HCMS.AppointmentService.Infrastructure.Core;
+using HCMS.AppointmentService.Infrastructure.Kafka.Events;
+using System.Text.Json;
 
 namespace HCMS.AppointmentService.Domain.Handlers
 {
@@ -24,6 +27,20 @@ namespace HCMS.AppointmentService.Domain.Handlers
 
             appointment.Status = AppointmentStatus.Canceled;
 
+            await _context.SaveChangesAsync();
+
+            var eventMessage = new AppointmentCanceledEvent(appointment.Id);
+
+            var outboxMessage = new OutboxMessage
+            {
+                Id = Guid.NewGuid(),
+                Type = "appointment-canceled",
+                Payload = JsonSerializer.Serialize(eventMessage),
+                OccurredOn = DateTime.UtcNow,
+                Processed = false
+            };
+
+            _context.OutboxMessages.Add(outboxMessage);
             await _context.SaveChangesAsync();
         }
     }

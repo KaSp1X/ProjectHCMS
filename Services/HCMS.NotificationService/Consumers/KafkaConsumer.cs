@@ -20,7 +20,7 @@ namespace HCMS.NotificationService.Consumers
             };
 
             using var consumer = new ConsumerBuilder<string, string>(consumerConfig).Build();
-            consumer.Subscribe("appointment-created");
+            consumer.Subscribe(["appointment-created", "appointment-canceled"]);
 
             while (!stoppingToken.IsCancellationRequested)
             {
@@ -28,11 +28,20 @@ namespace HCMS.NotificationService.Consumers
 
                 using var scope = _provider.CreateScope();
                 var handler = scope.ServiceProvider.GetRequiredService<NotificationHandler>();
-                var message = JsonSerializer.Deserialize<AppointmentCreatedEvent>(result.Message.Value);
 
                 try
                 {
-                    await handler.Handle(message);
+                    if (result.Topic == "appointment-created")
+                    {
+                        var message = JsonSerializer.Deserialize<AppointmentCreatedEvent>(result.Message.Value);
+                        await handler.Handle(message);
+                    } 
+                    else if (result.Topic == "appointment-canceled")
+                    {
+                        var message = JsonSerializer.Deserialize<AppointmentCanceledEvent>(result.Message.Value);
+                        await handler.Handle(message);
+                    }
+
                     consumer.Commit(result);
                 }
                 catch (Exception ex)

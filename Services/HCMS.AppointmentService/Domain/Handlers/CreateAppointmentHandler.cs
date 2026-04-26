@@ -75,7 +75,7 @@ namespace HCMS.AppointmentService.Domain.Handlers
             var outboxMessage = new OutboxMessage
             {
                 Id = Guid.NewGuid(),
-                Type = "AppointmentCreated",
+                Type = "appointment-created",
                 Payload = JsonSerializer.Serialize(eventMessage),
                 OccurredOn = DateTime.UtcNow,
                 Processed = false

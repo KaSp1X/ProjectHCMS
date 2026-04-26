@@ -21,7 +21,7 @@ namespace HCMS.DoctorService.Infrastructure.Kafka.Consumers
             };
 
             using var consumer = new ConsumerBuilder<string, string>(consumerConfig).Build();
-            consumer.Subscribe("appointment-created");
+            consumer.Subscribe(["appointment-created", "appointment-canceled"]);
 
             while (!stoppingToken.IsCancellationRequested)
             {
@@ -30,20 +30,32 @@ namespace HCMS.DoctorService.Infrastructure.Kafka.Consumers
                 using var scope = _provider.CreateScope();
                 var db = scope.ServiceProvider.GetRequiredService<ServiceDbContext>();
 
-                var evt = JsonSerializer.Deserialize<AppointmentCreatedEvent>(result.Message.Value);
-
-                var entity = new BookedAppointment
+                if (result.Topic == "appointment-created")
                 {
-                    Id = Guid.NewGuid(),
-                    AppointmentId = evt.AppointmentId,
-                    PatientId = evt.PatientId,
-                    DoctorId = evt.DoctorId,
-                    StartTime = evt.StartTime,
-                    EndTime = evt.EndTime
-                };
+                    var evt = JsonSerializer.Deserialize<AppointmentCreatedEvent>(result.Message.Value);
 
-                db.BookedAppointments.Add(entity);
+                    var entity = new BookedAppointment
+                    {
+                        Id = Guid.NewGuid(),
+                        AppointmentId = evt.AppointmentId,
+                        PatientId = evt.PatientId,
+                        DoctorId = evt.DoctorId,
+                        StartTime = evt.StartTime,
+                        EndTime = evt.EndTime
+                    };
 
+                    db.BookedAppointments.Add(entity);
+                }
+                else if (result.Topic == "appointment-canceled")
+                {
+                    var evt = JsonSerializer.Deserialize<AppointmentCanceledEvent>(result.Message.Value);
+
+                    var existing = db.BookedAppointments
+                        .FirstOrDefault(x => x.AppointmentId == evt.AppointmentId);
+
+                    if (existing != null)
+                        db.BookedAppointments.Remove(existing);
+                }
                 db.SaveChanges();
                 consumer.Commit(result);
             }

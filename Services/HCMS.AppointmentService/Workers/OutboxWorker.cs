@@ -24,7 +24,7 @@ namespace HCMS.AppointmentService.Workers
 
                 foreach (var msg in messages)
                 {
-                    await producer.ProduceAsync("appointment-created", msg.Payload);
+                    await producer.ProduceAsync(msg.Type, msg.Payload);
 
                     msg.Processed = true;
                 }
