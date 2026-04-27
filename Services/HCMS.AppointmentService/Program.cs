@@ -2,16 +2,21 @@ using DoctorServiceGrpc;
 using HCMS.AppointmentService.Domain.Handlers;
 using HCMS.AppointmentService.Infrastructure.Auth;
 using HCMS.AppointmentService.Infrastructure.Core;
+using HCMS.AppointmentService.Infrastructure.gRPC;
 using HCMS.AppointmentService.Infrastructure.Kafka;
 using HCMS.AppointmentService.Workers;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.WebHost.UseUrls("http://localhost:5001");
+builder.WebHost.ConfigureKestrel(options => {
+    options.ListenAnyIP(5001, o => o.Protocols = HttpProtocols.Http1);
+    options.ListenAnyIP(8001, o => o.Protocols = HttpProtocols.Http2);
+});
 
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
@@ -38,9 +43,10 @@ builder.Services.AddControllers();
 
 builder.Services.AddDbContext<ServiceDbContext>(options => options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+builder.Services.AddGrpc();
 builder.Services.AddGrpcClient<DoctorAvailability.DoctorAvailabilityClient>(o =>
 {
-    o.Address = new Uri("https://localhost:8003");
+    o.Address = new Uri("http://localhost:8003");
 });
 
 builder.Services.AddHostedService<OutboxWorker>();
@@ -62,7 +68,8 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
-app.MapControllers();
+app.MapControllers(); 
+app.MapGrpcService<AppointmentGrpcService>();
 
 app.UseAuthentication();
 app.UseAuthorization();

@@ -2,11 +2,16 @@ using HCMS.DoctorService.Domain.Handlers;
 using HCMS.DoctorService.Infrastructure.Core;
 using HCMS.DoctorService.Infrastructure.gRPC;
 using HCMS.DoctorService.Infrastructure.Kafka.Consumers;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.WebHost.UseUrls("http://localhost:5003", "https://localhost:8003");
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.ListenAnyIP(5003, o => o.Protocols = HttpProtocols.Http1);
+    options.ListenAnyIP(8003, o => o.Protocols = HttpProtocols.Http2);
+});
 
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi

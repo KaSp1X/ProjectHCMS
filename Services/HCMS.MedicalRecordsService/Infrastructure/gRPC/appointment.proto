@@ -1,0 +1,17 @@
+syntax = "proto3";
+option csharp_namespace = "AppointmentServiceGrpc";
+
+service AppointmentExistence {
+  rpc GetAppointment (GetAppointmentRequest) returns (GetAppointmentResponse);
+}
+
+message GetAppointmentRequest {
+  string appointmentId = 1;
+}
+
+message GetAppointmentResponse {
+  string appointmentId = 1;
+  string doctorId = 2;
+  string patientId = 3;
+  string status = 4;
+}

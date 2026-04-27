@@ -4,7 +4,6 @@ using HCMS.AppointmentService.Domain.Entities;
 using HCMS.AppointmentService.Domain.Enums;
 using HCMS.AppointmentService.Infrastructure.Auth;
 using HCMS.AppointmentService.Infrastructure.Core;
-using HCMS.AppointmentService.Infrastructure.Kafka;
 using HCMS.AppointmentService.Infrastructure.Kafka.Events;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;

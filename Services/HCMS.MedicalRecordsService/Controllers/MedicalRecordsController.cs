@@ -1,4 +1,5 @@
-﻿using HCMS.MedicalRecordsService.Domain.DTOs;
+﻿using AppointmentServiceGrpc;
+using HCMS.MedicalRecordsService.Domain.DTOs;
 using HCMS.MedicalRecordsService.Domain.Entities;
 using HCMS.MedicalRecordsService.Infrastructure.Auth;
 using HCMS.MedicalRecordsService.Infrastructure.Core;
@@ -11,24 +12,41 @@ namespace HCMS.MedicalRecordsService.Controllers
 {
     [ApiController]
     [Route("api/records")]
-    public class MedicalRecordsController(ServiceDbContext context) : ControllerBase
+    public class MedicalRecordsController(ServiceDbContext context, AppointmentExistence.AppointmentExistenceClient grpcClient) : ControllerBase
     {
         private readonly ServiceDbContext _context = context;
+        private readonly AppointmentExistence.AppointmentExistenceClient _grpcClient = grpcClient;
 
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        public async Task<IActionResult> CreateRecord(CreateRecordDto dto, [FromServices] RecordAccessService accessService)
+        public async Task<IActionResult> CreateRecord(CreateRecordDto dto)
         {
             var user = new UserContext(User);
 
             if (!user.IsDoctor)
                 return Forbid();
 
+            var grpcResponse = await _grpcClient.GetAppointmentAsync(
+            new GetAppointmentRequest
+            {
+                AppointmentId = dto.AppointmentId.ToString()
+            });
+
+            if (grpcResponse.Status == "Canceled")
+                return BadRequest("Appointment is cancelled");
+
+            if (grpcResponse.DoctorId != dto.DoctorId.ToString())
+                return BadRequest("Doctor not assigned to this appointment");
+
+            if (grpcResponse.PatientId != dto.PatientId.ToString())
+                return BadRequest("Patient mismatch");
+
             var record = new MedicalRecord
             {
                 PatientId = dto.PatientId,
-                DoctorId = dto.DoctorId,
+                DoctorId = user.UserId,
                 AppointmentId = dto.AppointmentId,
                 Notes = dto.Notes,
                 CreatedAt = DateTime.UtcNow
@@ -119,7 +137,8 @@ namespace HCMS.MedicalRecordsService.Controllers
 
             var objectId = ObjectId.Parse(fileId);
             var filter = Builders<GridFSFileInfo>.Filter.Eq("_id", objectId);
-            var fileInfo = await bucket.Find(filter).FirstOrDefaultAsync();
+            var query = await bucket.FindAsync(filter);
+            var fileInfo = await query.FirstOrDefaultAsync();
 
             if (fileInfo == null)
                 return NotFound();

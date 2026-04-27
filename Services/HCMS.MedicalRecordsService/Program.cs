@@ -1,3 +1,4 @@
+using AppointmentServiceGrpc;
 using HCMS.MedicalRecordsService.Infrastructure.Auth;
 using HCMS.MedicalRecordsService.Infrastructure.Core;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -9,7 +10,9 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.WebHost.UseUrls("http://localhost:5005");
+builder.WebHost.ConfigureKestrel(options => {
+    options.ListenAnyIP(5005);
+});
 
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
@@ -33,6 +36,11 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddAuthorization();
 
 builder.Services.AddControllers();
+
+builder.Services.AddGrpcClient<AppointmentExistence.AppointmentExistenceClient>(o =>
+{
+    o.Address = new Uri("http://localhost:8001");
+});
 
 builder.Services.AddSingleton<ServiceDbContext>();
 
