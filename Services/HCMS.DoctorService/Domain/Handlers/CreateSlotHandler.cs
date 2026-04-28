@@ -1,7 +1,6 @@
 ﻿using HCMS.DoctorService.Domain.Commands;
 using HCMS.DoctorService.Domain.Entities;
 using HCMS.DoctorService.Infrastructure.Core;
-using Microsoft.EntityFrameworkCore;
 
 namespace HCMS.DoctorService.Domain.Handlers
 {

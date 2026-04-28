@@ -27,6 +27,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 
 builder.Services.AddAuthorizationBuilder().AddPolicy("authenticated", policy => policy.RequireAuthenticatedUser());
+builder.Services.AddAuthorizationBuilder().AddPolicy("doctor-only", policy => policy.RequireRole("Doctor"));
 
 var app = builder.Build();
 

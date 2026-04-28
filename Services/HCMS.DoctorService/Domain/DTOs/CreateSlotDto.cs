@@ -1,4 +1,4 @@
 ﻿namespace HCMS.DoctorService.Domain.DTOs
 {
-    public record CreateSlotDto(Guid DoctorId, DateTime StartTime, DateTime EndTime);
+    public record CreateSlotDto(DateTime StartTime, DateTime EndTime);
 }
