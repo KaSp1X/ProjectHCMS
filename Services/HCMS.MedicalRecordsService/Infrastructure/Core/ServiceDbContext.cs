@@ -15,6 +15,7 @@ namespace HCMS.MedicalRecordsService.Infrastructure.Core
         }
 
         public IMongoCollection<MedicalRecord> Records => _db.GetCollection<MedicalRecord>("records");
+        public IMongoCollection<OutboxMessage> OutboxMessages => _db.GetCollection<OutboxMessage>("outbox");
 
         public GridFSBucket FileBucket => new(_db);
     }

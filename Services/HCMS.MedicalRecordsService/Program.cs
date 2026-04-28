@@ -1,6 +1,8 @@
 using AppointmentServiceGrpc;
 using HCMS.MedicalRecordsService.Infrastructure.Auth;
 using HCMS.MedicalRecordsService.Infrastructure.Core;
+using HCMS.MedicalRecordsService.Infrastructure.Kafka;
+using HCMS.MedicalRecordsService.Workers;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using MongoDB.Bson;
@@ -41,6 +43,10 @@ builder.Services.AddGrpcClient<AppointmentExistence.AppointmentExistenceClient>(
 {
     o.Address = new Uri("http://localhost:8001");
 });
+
+builder.Services.AddHostedService<OutboxWorker>();
+
+builder.Services.AddSingleton<KafkaProducer>();
 
 builder.Services.AddSingleton<ServiceDbContext>();
 

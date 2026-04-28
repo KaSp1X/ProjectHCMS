@@ -3,10 +3,12 @@ using HCMS.MedicalRecordsService.Domain.DTOs;
 using HCMS.MedicalRecordsService.Domain.Entities;
 using HCMS.MedicalRecordsService.Infrastructure.Auth;
 using HCMS.MedicalRecordsService.Infrastructure.Core;
+using HCMS.MedicalRecordsService.Infrastructure.Kafka.Events;
 using Microsoft.AspNetCore.Mvc;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using MongoDB.Driver.GridFS;
+using System.Text.Json;
 
 namespace HCMS.MedicalRecordsService.Controllers
 {
@@ -45,6 +47,7 @@ namespace HCMS.MedicalRecordsService.Controllers
 
             var record = new MedicalRecord
             {
+                Id = ObjectId.GenerateNewId(),
                 PatientId = dto.PatientId,
                 DoctorId = user.UserId,
                 AppointmentId = dto.AppointmentId,
@@ -53,6 +56,24 @@ namespace HCMS.MedicalRecordsService.Controllers
             };
 
             await _context.Records.InsertOneAsync(record);
+
+            var eventMessage = new MedicalRecordCreatedEvent(
+                record.Id.ToString(),
+                record.AppointmentId,
+                record.PatientId,
+                record.DoctorId);
+
+            var outboxMessage = new OutboxMessage
+            {
+                Id = ObjectId.GenerateNewId(),
+                Type = "medical-record-created",
+                Payload = JsonSerializer.Serialize(eventMessage),
+                OccurredOn = DateTime.UtcNow,
+                Processed = false
+            };
+
+            await _context.OutboxMessages.InsertOneAsync(outboxMessage);
+
             return Ok(record);
         }
 
