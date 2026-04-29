@@ -4,7 +4,9 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.WebHost.UseUrls("http://localhost:5000");
+builder.WebHost.ConfigureKestrel(options => {
+    options.ListenAnyIP(8080);
+});
 
 builder.Services
     .AddReverseProxy()

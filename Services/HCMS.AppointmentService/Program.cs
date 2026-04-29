@@ -14,8 +14,8 @@ using System.Text;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.WebHost.ConfigureKestrel(options => {
-    options.ListenAnyIP(5001, o => o.Protocols = HttpProtocols.Http1);
-    options.ListenAnyIP(8001, o => o.Protocols = HttpProtocols.Http2);
+    options.ListenAnyIP(8080, o => o.Protocols = HttpProtocols.Http1);
+    options.ListenAnyIP(8081, o => o.Protocols = HttpProtocols.Http2);
 });
 
 // Add services to the container.
@@ -46,7 +46,7 @@ builder.Services.AddDbContext<ServiceDbContext>(options => options.UseNpgsql(bui
 builder.Services.AddGrpc();
 builder.Services.AddGrpcClient<DoctorAvailability.DoctorAvailabilityClient>(o =>
 {
-    o.Address = new Uri("http://localhost:8003");
+    o.Address = new Uri("http://doctor-service:8081");
 });
 
 builder.Services.AddHostedService<OutboxWorker>();

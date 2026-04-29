@@ -13,7 +13,7 @@ using System.Text;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.WebHost.ConfigureKestrel(options => {
-    options.ListenAnyIP(5005);
+    options.ListenAnyIP(8080);
 });
 
 // Add services to the container.
@@ -41,7 +41,7 @@ builder.Services.AddControllers();
 
 builder.Services.AddGrpcClient<AppointmentExistence.AppointmentExistenceClient>(o =>
 {
-    o.Address = new Uri("http://localhost:8001");
+    o.Address = new Uri("http://appointment-service:8081");
 });
 
 builder.Services.AddHostedService<OutboxWorker>();

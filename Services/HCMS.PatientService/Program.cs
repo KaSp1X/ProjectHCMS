@@ -6,7 +6,9 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.WebHost.UseUrls("http://localhost:5002");
+builder.WebHost.ConfigureKestrel(options => {
+    options.ListenAnyIP(8080);
+});
 
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
