@@ -1,5 +1,4 @@
 ﻿using HCMS.AppointmentService.Domain.Entities;
-using HCMS.AppointmentService.Infrastructure.Auth;
 
 namespace HCMS.AppointmentService.Infrastructure.Auth
 {
@@ -23,5 +22,7 @@ namespace HCMS.AppointmentService.Infrastructure.Auth
 
             return false;
         }
+
+        public bool CanComplete(UserContext user, Appointment appt) => user.IsAdmin || (user.IsDoctor && appt.DoctorId == user.UserId);
     }
 }

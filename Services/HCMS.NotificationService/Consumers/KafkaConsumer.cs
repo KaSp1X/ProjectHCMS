@@ -20,7 +20,7 @@ namespace HCMS.NotificationService.Consumers
             };
 
             using var consumer = new ConsumerBuilder<string, string>(consumerConfig).Build();
-            consumer.Subscribe(["appointment-created", "appointment-canceled", "medical-record-created"]);
+            consumer.Subscribe(["appointment-created", "appointment-canceled", "appointment-completed", "medical-record-created"]);
 
             while (!stoppingToken.IsCancellationRequested)
             {
@@ -39,6 +39,11 @@ namespace HCMS.NotificationService.Consumers
                     else if (result.Topic == "appointment-canceled")
                     {
                         var message = JsonSerializer.Deserialize<AppointmentCanceledEvent>(result.Message.Value);
+                        await handler.Handle(message);
+                    }
+                    else if (result.Topic == "appointment-completed")
+                    {
+                        var message = JsonSerializer.Deserialize<AppointmentCompletedEvent>(result.Message.Value);
                         await handler.Handle(message);
                     }
                     else if (result.Topic == "medical-record-created")

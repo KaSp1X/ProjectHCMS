@@ -56,9 +56,10 @@ builder.Services.AddSingleton<KafkaProducer>();
 builder.Services.AddScoped<AppointmentAccessService>();
 
 builder.Services.AddScoped<CreateAppointmentHandler>();
+builder.Services.AddScoped<CancelAppointmentHandler>();
+builder.Services.AddScoped<CompleteAppointmentHandler>();
 builder.Services.AddScoped<GetAppointmentsByDoctorHandler>();
 builder.Services.AddScoped<GetAppointmentsHandler>();
-builder.Services.AddScoped<CancelAppointmentHandler>();
 
 var app = builder.Build();
 

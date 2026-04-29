@@ -21,7 +21,7 @@ namespace HCMS.DoctorService.Infrastructure.Kafka.Consumers
             };
 
             using var consumer = new ConsumerBuilder<string, string>(consumerConfig).Build();
-            consumer.Subscribe(["appointment-created", "appointment-canceled"]);
+            consumer.Subscribe(["appointment-created", "appointment-canceled", "appointment-completed"]);
 
             while (!stoppingToken.IsCancellationRequested)
             {
@@ -46,7 +46,7 @@ namespace HCMS.DoctorService.Infrastructure.Kafka.Consumers
 
                     db.BookedAppointments.Add(entity);
                 }
-                else if (result.Topic == "appointment-canceled")
+                else if (result.Topic == "appointment-canceled" || result.Topic == "appointment-completed")
                 {
                     var evt = JsonSerializer.Deserialize<AppointmentCanceledEvent>(result.Message.Value);
 

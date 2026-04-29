@@ -63,5 +63,24 @@ namespace HCMS.AppointmentService.Controllers
                 return BadRequest(ex.Message);
             }
         }
+
+        [HttpPut("{appointmentId}/complete")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        public async Task<IActionResult> Complete(Guid appointmentId, [FromServices] CompleteAppointmentHandler handler)
+        {
+            var user = new UserContext(User);
+
+            try
+            {
+                await handler.Handle(appointmentId, user);
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
     }
 }

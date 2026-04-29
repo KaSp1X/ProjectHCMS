@@ -23,6 +23,14 @@ namespace HCMS.NotificationService.Services
             return Task.CompletedTask;
         }
 
+        public Task Handle(AppointmentCompletedEvent message)
+        {
+            Console.WriteLine($"[Notification] Appointment completed:");
+            Console.WriteLine($"Appointment ID: {message.AppointmentId}");
+
+            return Task.CompletedTask;
+        }
+
         public Task Handle(MedicalRecordCreatedEvent message)
         {
             Console.WriteLine($"[Notification] Medical record created:");
